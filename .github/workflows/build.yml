@@ -1,8 +1,10 @@
 name: Build FriendlyWrt
 
 on:
+  workflow_dispatch: # 手动触发按钮
   watch:
     types: started
+
 jobs:
   prepare_release:
     runs-on: ubuntu-22.04
@@ -33,8 +35,8 @@ jobs:
     if: github.event.repository.owner.id == github.event.sender.id
     strategy:
       matrix:
-        VERSION: ['25.12', '24.10']
-        SET: [docker, non-docker]
+        VERSION: ['25.12']
+        SET: [docker]
 
     steps:
     - name: Checkout
@@ -147,7 +149,7 @@ jobs:
         echo "$ldd_out"
         if ! echo "$ldd_out" | grep -q "not a dynamic executable"; then
           bad_paths=$(echo "$ldd_out" | grep -oE '=> /[^ ]+' | sed 's|=> ||' \
-                       | grep -vE '^/(lib|lib64|usr/lib)/' || true)
+                        | grep -vE '^/(lib|lib64|usr/lib)/' || true)
           not_found=$(echo "$ldd_out" | grep -F "not found" || true)
           if [ -n "$bad_paths" ] || [ -n "$not_found" ]; then
             echo "ERROR: $PM_BIN has non-portable dynamic dependencies:"
@@ -187,9 +189,9 @@ jobs:
 
     strategy:
       matrix:
-        VERSION: ['25.12', '24.10']
-        CPU: [rk3328, rk3528, rk3399, rk3566, rk3568, rk3576, rk3588]
-        SET: [docker, non-docker]
+        VERSION: ['25.12']
+        CPU: [rk3576] # 如需全系列编译可替换为: [rk3328, rk3528, rk3399, rk3566, rk3568, rk3576, rk3588]
+        SET: [docker] # 如需同时编译无docker版本可替换为: [docker, non-docker]
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -324,18 +326,11 @@ jobs:
     - name: Compile uboot and kernel
       run: |
         cd project
-        ## If you need to modify the kernel configuration, please edit the script below
-        # source ../scripts/custome_kernel_config.sh
+        # 取消对自定义内核配置脚本的注释，确保你的修改生效
+        source ../scripts/custome_kernel_config.sh
 
         ./build.sh uboot
         ./build.sh kernel
-
-        ## If you want to compile a driver from source, here is an example
-        # case ${{ matrix.CPU }} in
-        # rk3568)
-        #     ../scripts/3rd/add_r8125.sh
-        #     ;;
-        # esac
 
     - name: Build sd image
       id: build_sd_image
@@ -397,4 +392,3 @@ jobs:
             echo "Deleting asset: $asset"
             gh release delete-asset "$RELEASE_TAG" "$asset" --yes --repo "$GITHUB_REPOSITORY"
           done
-
