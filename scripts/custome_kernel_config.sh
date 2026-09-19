@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 定义需要禁用和开启的内核选项
+# 需要修改的内核配置项
 CONFIGS=(
   # 1. 禁用原厂闭源 Mali 驱动 (mali_kbase)
   "CONFIG_MALI_BIFROST=n"
@@ -8,7 +8,7 @@ CONFIGS=(
   "CONFIG_MALI_VALHALL=n"
   "CONFIG_MALI_KBASE=n"
 
-  # 2. 启用开源 Panfrost 驱动及相关依赖
+  # 2. 启用开源 Panfrost GPU 驱动及相关依赖
   "CONFIG_DRM=y"
   "CONFIG_DRM_KMS_HELPER=y"
   "CONFIG_DRM_ROCKCHIP=y"
@@ -23,7 +23,6 @@ if [ -f .current_config.mk ]; then
   source .current_config.mk
   KCFG=kernel/arch/arm64/configs/$(awk '{print $1}' <<< "$TARGET_KERNEL_CONFIG")
 
-  # 如果找到了目标配置文件，进行精准替换与追加
   if [ -f "${KCFG}" ]; then
     echo "Updating kernel config: ${KCFG}"
     for CFG in "${CONFIGS[@]}"; do
