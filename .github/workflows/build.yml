@@ -1,7 +1,7 @@
 name: Build FriendlyWrt
 
 on:
-  workflow_dispatch: # 手动触发按钮
+  workflow_dispatch:
   watch:
     types: started
 
@@ -36,7 +36,8 @@ jobs:
     strategy:
       matrix:
         VERSION: ['25.12']
-        SET: [docker]
+        # 必须同时保留 docker 和 non-docker，以生成基础工具链 (host-pm.tgz)
+        SET: [docker, non-docker] 
 
     steps:
     - name: Checkout
@@ -81,7 +82,8 @@ jobs:
     - name: Apply customizations
       run: |
         cd project
-        source ../scripts/custome_config.sh
+        # 增加防错机制，文件存在时才执行，避免报错退出
+        [ -f ../scripts/custome_config.sh ] && source ../scripts/custome_config.sh || true
 
     - name: Prepare dot config and feeds
       run: |
@@ -190,8 +192,10 @@ jobs:
     strategy:
       matrix:
         VERSION: ['25.12']
-        CPU: [rk3576] # 如需全系列编译可替换为: [rk3328, rk3528, rk3399, rk3566, rk3568, rk3576, rk3588]
-        SET: [docker] # 如需同时编译无docker版本可替换为: [docker, non-docker]
+        # 在这里精准指定只打包 RK3576 (NanoPi M5)
+        CPU: [rk3576]
+        # 只生成带 Docker 的固件版本
+        SET: [docker] 
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -268,31 +272,14 @@ jobs:
       run: |
         cd project
         case ${{ matrix.CPU }} in
-        rk3328)
-          MODEL=R2S-R2C-Series
-          ;;
-        rk3528)
-          MODEL=R28S-Zero2-NEO3Plus-Series
-          ;;
-        rk3399)
-          MODEL=R4S-Series
-          ;;
-        rk3568)
-          MODEL=R5S-R5C-Series
-          ;;
-        rk3566)
-          MODEL=R3S-Series
-          ;;
-        rk3576)
-          MODEL=M5-R76S-Series
-          ;;
-        rk3588)
-          MODEL=T6-R6S-R6C-M6-Series
-          ;;
-        *)
-          echo "unknow cpu"
-          exit 1
-          ;;
+        rk3328) MODEL=R2S-R2C-Series ;;
+        rk3528) MODEL=R28S-Zero2-NEO3Plus-Series ;;
+        rk3399) MODEL=R4S-Series ;;
+        rk3568) MODEL=R5S-R5C-Series ;;
+        rk3566) MODEL=R3S-Series ;;
+        rk3576) MODEL=M5-R76S-Series ;;
+        rk3588) MODEL=T6-R6S-R6C-M6-Series ;;
+        *) echo "unknow cpu"; exit 1 ;;
         esac
         [ "${{ matrix.SET }}" == "docker" ] && SUFFIX="-docker"
         IMG_FILE=${MODEL}-FriendlyWrt-${{ matrix.VERSION }}${SUFFIX}.img
@@ -326,8 +313,8 @@ jobs:
     - name: Compile uboot and kernel
       run: |
         cd project
-        # 取消对自定义内核配置脚本的注释，确保你的修改生效
-        source ../scripts/custome_kernel_config.sh
+        # 增加防错机制
+        [ -f ../scripts/custome_kernel_config.sh ] && source ../scripts/custome_kernel_config.sh || true
 
         ./build.sh uboot
         ./build.sh kernel
