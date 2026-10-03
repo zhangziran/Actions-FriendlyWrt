@@ -1,6 +1,6 @@
 #!/bin/bash
-# 一行命令：自动把 6.1 内核里所有支持的驱动全部设为 =m 模块
-make -C kernel ARCH=arm64 allmodconfig
+
+
 CONFIGS=(
   "CONFIG_NET_ACT_CT=m"
   "CONFIG_NET_ACT_CTINFO=m"
