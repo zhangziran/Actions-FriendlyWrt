@@ -1,11 +1,10 @@
 #!/bin/bash
 
 # =========================================================
-# NanoPi M5 (RK3576) 6.1 厂商内核智能驱动注入脚本
-# 规则：
-# 1. 显卡冲突驱动强制设为 =n (保护 Panfrost)
-# 2. 如果原厂配置已经是 =y (内置)，【绝对不降级】，直接保留 =y！
-# 3. 如果原厂配置缺失或未开启，【安全补全】为 =m 模块
+# NanoPi M5 (RK3576) 6.1 厂商内核全量驱动智能注入脚本
+# 1. 完美保留 Panfrost 开源显卡配置 (禁用闭源 Mali KBase)
+# 2. 智能防降级：原厂已是 =y 内置的功能，绝不降级为 =m
+# 3. 补全 ALSA 声卡核心、蓝牙驱动、全量 USB 网卡、Wi-Fi、文件系统
 # =========================================================
 
 CONFIGS=(
@@ -107,44 +106,53 @@ CONFIGS=(
   "CONFIG_WIREGUARD=m"
 )
 
-source .current_config.mk
-KCFG=kernel/arch/arm64/configs/$(awk '{print $1}' <<< "$TARGET_KERNEL_CONFIG")
+# 1. 提取内核配置文件路径
+source .current_config.mk 2>/dev/null || true
+DEFCONFIG_NAME=$(awk '{print $1}' <<< "$TARGET_KERNEL_CONFIG")
+KCFG="kernel/arch/arm64/configs/${DEFCONFIG_NAME}"
 
-echo "===> 开始智能分析并注入内核配置至 ${KCFG} ..."
+# 2. 增加路径防错容灾校验（防 5 小时构建跑空）
+if [ -z "$DEFCONFIG_NAME" ] || [ ! -f "$KCFG" ]; then
+    echo "::error::未找到内核配置文件: ${KCFG}"
+    echo "当前 TARGET_KERNEL_CONFIG 变量为: ${TARGET_KERNEL_CONFIG}"
+    echo "正在搜寻 kernel/arch/arm64/configs/ 路径下的所有配置文件："
+    ls -la kernel/arch/arm64/configs/ || true
+    exit 1
+fi
 
+echo "===> 开始向内核配置文件 [ ${KCFG} ] 智能注入配置..."
+
+# 3. 智能替换与追加逻辑
 for CFG in "${CONFIGS[@]}"; do
   KEY=${CFG%%=*}
   VAL=${CFG#*=}
 
-  # 检查原厂配置文件中的当前状态
-  EXISTING_LINE=$(grep -E "^#? ?${KEY}[= ]" "${KCFG}" || true)
+  # 精准匹配 existing line (包含 =y, =m 或 # ... is not set)
+  EXISTING_LINE=$(grep -E "^(# )?${KEY}([ =].*)?$" "${KCFG}" || true)
 
   if [ "$VAL" = "n" ]; then
-    # 规则 1: 冲突驱动强行禁用 (=n)
     if [ -n "$EXISTING_LINE" ]; then
-      sed -i "s@^#\?${KEY}=.*@${KEY}=n@g" "${KCFG}"
+      sed -i -E "s@^(# )?${KEY}([ =].*)?\$@${KEY}=n@g" "${KCFG}"
     else
       echo "${KEY}=n" >> "${KCFG}"
     fi
 
   elif [ "$VAL" = "y" ]; then
-    # 规则 2: 核心功能强行内置 (=y)
     if [ -n "$EXISTING_LINE" ]; then
-      sed -i "s@^#\?${KEY}=.*@${KEY}=y@g" "${KCFG}"
+      sed -i -E "s@^(# )?${KEY}([ =].*)?\$@${KEY}=y@g" "${KCFG}"
     else
       echo "${KEY}=y" >> "${KCFG}"
     fi
 
   elif [ "$VAL" = "m" ]; then
-    # 规则 3: 针对模块 (=m)，如果原厂已经是 =y (内置)，千万不降级！保持原厂 =y！
     if echo "$EXISTING_LINE" | grep -q "=y"; then
-      echo "[保留原厂内置] ${KEY}=y (不降级为模块)"
+      echo "[保留原厂] ${KEY} 已经是内置 (=y)，跳过覆盖。"
     elif [ -n "$EXISTING_LINE" ]; then
-      sed -i "s@^#\?${KEY}=.*@${KEY}=m@g" "${KCFG}"
+      sed -i -E "s@^(# )?${KEY}([ =].*)?\$@${KEY}=m@g" "${KCFG}"
     else
       echo "${KEY}=m" >> "${KCFG}"
     fi
   fi
 done
 
-echo "===> 智能驱动配置注入完成！"
+echo "===> 内核驱动智能配置注入完毕！"
