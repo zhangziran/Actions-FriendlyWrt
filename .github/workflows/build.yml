@@ -97,7 +97,38 @@ jobs:
         TARGET_FRIENDLYWRT_CONFIG=${CONFIG}
         EOL
         DEBUG_DOT_CONFIG=1 ./build.sh friendlywrt
-   
+
+    - name: Pre-check BlueALSA Dependencies
+      run: |
+        cd project/friendlywrt
+        echo "==> Starting BlueALSA dependency pre-check validation..."
+        
+        if [ ! -f .config ]; then
+          echo "::error::Target configuration file (.config) was not generated in project/friendlywrt!"
+          exit 1
+        fi
+
+        PRECHECK_FAILED=0
+
+        # 校验核心蓝牙音频包 bluez-alsa 是否存在并开启
+        if ! grep -q "^CONFIG_PACKAGE_bluez-alsa=y" .config; then
+          echo "::error::Pre-check Failed: CONFIG_PACKAGE_bluez-alsa=y is missing or not enabled in .config!"
+          PRECHECK_FAILED=1
+        fi
+
+        # 校验强依赖编解码器 sbc 是否存在并开启
+        if ! grep -q "^CONFIG_PACKAGE_sbc=y" .config; then
+          echo "::error::Pre-check Failed: CONFIG_PACKAGE_sbc=y is missing or not enabled in .config!"
+          PRECHECK_FAILED=1
+        fi
+
+        if [ $PRECHECK_FAILED -ne 0 ]; then
+          echo "::error::BlueALSA dependency pre-check failed. Aborting pipeline before long compilation."
+          exit 1
+        fi
+
+        echo "==> BlueALSA configuration pre-check passed successfully."
+
     - name: Download package
       run: |
         cd project/friendlywrt
@@ -230,35 +261,7 @@ jobs:
 
         repo sync -c kernel --no-clone-bundle
         repo sync -c u-boot --no-clone-bundle
-        repo sync -c rkbin --no-clone-bundle
-        repo sync -c configs --no-clone-bundle
-        repo sync -c device/common --no-clone-bundle
-        repo sync -c device/friendlyelec --no-clone-bundle
-        repo sync -c scripts --no-clone-bundle
-        repo sync -c scripts/sd-fuse  --no-clone-bundle
-        repo sync -c toolchain  --no-clone-bundle
-
-    - name: Download friendlywrt rootfs (non-docker)
-      if: matrix.SET == 'non-docker'
-      uses: robinraju/release-downloader@v1.6
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        repository: ${{ github.repository }}
-        tag: ${{ needs.prepare_release.outputs.release_tag }}
-        fileName: "rootfs-friendlywrt-${{ matrix.VERSION }}.tgz"
-
-    - name: Download friendlywrt rootfs (docker)
-      if: matrix.SET == 'docker'
-      uses: robinraju/release-downloader@v1.6
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        repository: ${{ github.repository }}
-        tag: ${{ needs.prepare_release.outputs.release_tag }}
-        fileName: "rootfs-friendlywrt-${{ matrix.VERSION }}-docker.tgz"
-
-    - name: Download host package-manager bundle
+        rep...[source]()me: Download host package-manager bundle
       uses: robinraju/release-downloader@v1.6
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -313,7 +316,7 @@ jobs:
     - name: Compile uboot and kernel
       run: |
         cd project
-        # 增加防错机制
+        # 增加防错机制，驱动注入成功后编译
         [ -f ../scripts/custome_kernel_config.sh ] && source ../scripts/custome_kernel_config.sh || true
 
         ./build.sh uboot
