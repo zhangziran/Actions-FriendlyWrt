@@ -104,25 +104,19 @@ jobs:
       run: |
         cd project/friendlywrt
         
-        echo "===> 1. 检查 bluez-alsa 源码是否存在..."
-        if ! find feeds/ package/ -maxdepth 6 -name "Makefile" | grep -E -q "/bluez-alsa/Makefile|/bluealsa/Makefile"; then
-          echo "::error::未找到 bluez-alsa 源码！强制拉取补全脚本未生效。"
+        echo "===> 1. 检查核心包 bluez-alsa 是否成功锁定..."
+        if ! grep -q "CONFIG_PACKAGE_bluez-alsa=y" .config; then
+          echo "::error::校验失败：.config 中未找到 CONFIG_PACKAGE_bluez-alsa=y！"
           exit 1
         fi
 
-        echo "===> 2. 检查 sbc 依赖源码..."
-        if ! find feeds/ package/ -maxdepth 6 -name "Makefile" | grep -q "/sbc/Makefile"; then
-          echo "::error::未找到 sbc 源码！缺少依赖会导致服务不可用。"
+        echo "===> 2. 检查强依赖项 sbc 是否被系统自动补全..."
+        if ! grep -q "CONFIG_PACKAGE_sbc=y" .config; then
+          echo "::error::校验失败：.config 中缺失 sbc 依赖！"
           exit 1
         fi
 
-        echo "===> 3. 检查最终 .config 配置..."
-        if ! grep -E -q "CONFIG_PACKAGE_bluez-alsa=y|CONFIG_PACKAGE_bluealsa=y" .config; then
-          echo "::error::配置校验失败：.config 中未成功勾选 bluez-alsa，请检查配置文件格式。"
-          exit 1
-        fi
-
-        echo "===> [预检通过] 依赖链完整，开始放心进行长时间编译！"
+        echo "===> [预检完美通过] bluez-alsa 及关键依赖 sbc 均已锁定，可以放心开始编译！"
     # ==========================================
     # ▲▲▲ 预检步骤结束 ▲▲▲
     # ==========================================
