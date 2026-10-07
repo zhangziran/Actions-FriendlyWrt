@@ -31,7 +31,7 @@ sed -i -e 's/CONFIG_SDK=y/# CONFIG_SDK is not set/g' configs/rockchip/01-nanopi
 sed -i -e '/CONFIG_ALL_KMODS/d' configs/rockchip/01-nanopi
 sed -i -e '/CONFIG_ALL_NONSELECT/d' configs/rockchip/01-nanopi
 
-# 3. 追加全量配置 (注意官方包名改为了 bluez-alsa)
+# 2. 追加全量配置 (严格使用官方标准包名 bluez-alsa)
 cat << 'EOF' >> configs/rockchip/01-nanopi
 CONFIG_PACKAGE_dbus=y
 CONFIG_PACKAGE_glib2=y
