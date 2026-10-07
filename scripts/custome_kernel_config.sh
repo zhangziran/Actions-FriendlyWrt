@@ -31,6 +31,9 @@ CONFIGS=(
   "CONFIG_SND_DMAENGINE_PCM=y"
   "CONFIG_SND_SOC=y"
   "CONFIG_SND_SOC_ROCKCHIP=y"
+  # ▼▼▼ 建议补充以下两行，保证 BlueALSA 虚拟音频通道正常工作 ▼▼▼
+  "CONFIG_SND_ALOOP=m"
+  "CONFIG_SND_PROC_FS=y"
 
   # --- 3. 蓝牙协议栈与驱动 ---
   "CONFIG_BT=m"
