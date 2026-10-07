@@ -104,25 +104,25 @@ jobs:
       run: |
         cd project/friendlywrt
         
-        echo "===> 1. 检查 bluealsa 源码 Makefile 是否存在..."
-        if ! find feeds/ package/ -maxdepth 6 -name "Makefile" | grep -q "/bluealsa/Makefile"; then
-          echo "::error::未找到 bluealsa 源码！可能 Feeds 未正确拉取多媒体包。"
+        echo "===> 1. 检查 bluez-alsa 源码是否存在..."
+        if ! find feeds/ package/ -maxdepth 6 -name "Makefile" | grep -E -q "/bluez-alsa/Makefile|/bluealsa/Makefile"; then
+          echo "::error::未找到 bluez-alsa 源码！强制拉取补全脚本未生效。"
           exit 1
         fi
 
-        echo "===> 2. 检查 sbc 与 dbus 基础依赖源码..."
+        echo "===> 2. 检查 sbc 依赖源码..."
         if ! find feeds/ package/ -maxdepth 6 -name "Makefile" | grep -q "/sbc/Makefile"; then
-          echo "::error::未找到 sbc 源码！bluealsa 强依赖此包，缺少它必定被系统裁掉。"
+          echo "::error::未找到 sbc 源码！缺少依赖会导致服务不可用。"
           exit 1
         fi
 
-        echo "===> 3. 检查 make defconfig 后的最终 .config 配置..."
-        if ! grep -q "CONFIG_PACKAGE_bluealsa=y" .config; then
-          echo "::error::严重错误: .config 中的 bluealsa 被系统静默剔除了！说明你的 custome_config.sh 中缺少底层依赖配置（如 dbus, sbc 等）。"
+        echo "===> 3. 检查最终 .config 配置..."
+        if ! grep -E -q "CONFIG_PACKAGE_bluez-alsa=y|CONFIG_PACKAGE_bluealsa=y" .config; then
+          echo "::error::配置校验失败：.config 中未成功勾选 bluez-alsa，请检查配置文件格式。"
           exit 1
         fi
 
-        echo "===> [预检完美通过] 依赖链完整且配置已锁定，可以放心开始 5 小时编译！"
+        echo "===> [预检通过] 依赖链完整，开始放心进行长时间编译！"
     # ==========================================
     # ▲▲▲ 预检步骤结束 ▲▲▲
     # ==========================================
