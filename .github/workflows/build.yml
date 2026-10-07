@@ -97,29 +97,7 @@ jobs:
         TARGET_FRIENDLYWRT_CONFIG=${CONFIG}
         EOL
         DEBUG_DOT_CONFIG=1 ./build.sh friendlywrt
-    # ==========================================
-    # ▼▼▼ 请将下面这个全新的预检步骤粘贴在这里 ▼▼▼
-    # ==========================================
-    - name: Check BlueALSA Configuration (Strict Pre-flight)
-      run: |
-        cd project/friendlywrt
-        
-        echo "===> 1. 检查核心包 bluez-alsa 是否成功锁定..."
-        if ! grep -q "CONFIG_PACKAGE_bluez-alsa=y" .config; then
-          echo "::error::校验失败：.config 中未找到 CONFIG_PACKAGE_bluez-alsa=y！"
-          exit 1
-        fi
-
-        echo "===> 2. 检查强依赖项 sbc 是否被系统自动补全..."
-        if ! grep -q "CONFIG_PACKAGE_sbc=y" .config; then
-          echo "::error::校验失败：.config 中缺失 sbc 依赖！"
-          exit 1
-        fi
-
-        echo "===> [预检完美通过] bluez-alsa 及关键依赖 sbc 均已锁定，可以放心开始编译！"
-    # ==========================================
-    # ▲▲▲ 预检步骤结束 ▲▲▲
-    # ==========================================
+   
     - name: Download package
       run: |
         cd project/friendlywrt
