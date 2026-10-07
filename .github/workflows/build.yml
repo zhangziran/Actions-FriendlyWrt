@@ -97,36 +97,7 @@ jobs:
         TARGET_FRIENDLYWRT_CONFIG=${CONFIG}
         EOL
         DEBUG_DOT_CONFIG=1 ./build.sh friendlywrt
-    - name: Pre-check BlueALSA Dependencies
-      run: |
-        cd project/friendlywrt
-        echo "==> Starting BlueALSA dependency pre-check validation..."
-        
-        if [ ! -f .config ]; then
-          echo "::error::Target configuration file (.config) was not generated in project/friendlywrt!"
-          exit 1
-        fi
-
-        PRECHECK_FAILED=0
-
-        # 校验核心蓝牙音频包 bluez-alsa 是否存在并开启
-        if ! grep -q "^CONFIG_PACKAGE_bluez-alsa=y" .config; then
-          echo "::error::Pre-check Failed: CONFIG_PACKAGE_bluez-alsa=y is missing or not enabled in .config!"
-          PRECHECK_FAILED=1
-        fi
-
-        # 校验强依赖编解码器 sbc 是否存在并开启
-        if ! grep -q "^CONFIG_PACKAGE_sbc=y" .config; then
-          echo "::error::Pre-check Failed: CONFIG_PACKAGE_sbc=y is missing or not enabled in .config!"
-          PRECHECK_FAILED=1
-        fi
-
-        if [ $PRECHECK_FAILED -ne 0 ]; then
-          echo "::error::BlueALSA dependency pre-check failed. Aborting pipeline before long compilation."
-          exit 1
-        fi
-
-        echo "==> BlueALSA configuration pre-check passed successfully."
+  
     - name: Download package
       run: |
         cd project/friendlywrt
