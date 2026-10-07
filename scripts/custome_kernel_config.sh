@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # =========================================================
 # NanoPi M5 (RK3576) 6.1 厂商内核全量驱动智能注入脚本
@@ -31,7 +32,6 @@ CONFIGS=(
   "CONFIG_SND_DMAENGINE_PCM=y"
   "CONFIG_SND_SOC=y"
   "CONFIG_SND_SOC_ROCKCHIP=y"
-  # ▼▼▼ 建议补充以下两行，保证 BlueALSA 虚拟音频通道正常工作 ▼▼▼
   "CONFIG_SND_ALOOP=m"
   "CONFIG_SND_PROC_FS=y"
 
@@ -52,11 +52,11 @@ CONFIGS=(
   "CONFIG_GPIOLIB=y"
   "CONFIG_GPIO_SYSFS=y"
 
-  # --- 5. 全量 Wi-Fi 无线网卡 ---
+  # --- 4. 全量 Wi-Fi 无线网卡 ---
   "CONFIG_WLAN=y"
   "CONFIG_MT7601U=m"
 
-  # --- 7. USB 串口芯片 ---
+  # --- 5. USB 串口芯片 ---
   "CONFIG_USB_SERIAL=m"
   "CONFIG_USB_SERIAL_GENERIC=m"
   "CONFIG_USB_SERIAL_CH341=m"
@@ -64,7 +64,7 @@ CONFIGS=(
   "CONFIG_USB_SERIAL_FTDI_SIO=m"
   "CONFIG_USB_SERIAL_PL2303=m"
 
-  # --- 8. 虚拟网卡与高级网络协议 ---
+  # --- 6. 虚拟网卡与高级网络协议 ---
   "CONFIG_TUN=m"
   "CONFIG_VETH=m"
 )
